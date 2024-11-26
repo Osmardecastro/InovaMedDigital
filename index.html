@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthTrack - Monitoramento de Saúde</title>
+    <style>
+        /* Estilos Gerais */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #e6f4ea;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .app-name {
+            font-size: 26px;
+            color: #32CD32;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #333;
+            font-weight: normal;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        /* Estilos de Entrada e Botões */
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background-color: #32CD32;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #28a428;
+        }
+
+        .link {
+            color: #32CD32;
+            cursor: pointer;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Nome do Aplicativo -->
+        <div class="app-name">HealthTrack</div>
+
+        <!-- Tela de Login -->
+        <div id="login" class="screen">
+            <h2>Login</h2>
+            <input type="email" id="loginEmail" placeholder="E-mail" required>
+            <input type="password" id="loginPassword" placeholder="Senha" required>
+            <button onclick="login()">Entrar</button>
+            <p>Não tem conta? <span class="link" onclick="showScreen('register')">Registrar-se</span></p>
+        </div>
+
+        <!-- Tela de Registro -->
+        <div id="register" class="screen hidden">
+            <h2>Registrar</h2>
+            <input type="text" id="registerName" placeholder="Nome Completo" required>
+            <input type="email" id="registerEmail" placeholder="E-mail" required>
+            <input type="tel" id="registerPhone" placeholder="Celular" required>
+            <input type="password" id="registerPassword" placeholder="Senha" required>
+            
+            <h3>Perguntas de Segurança</h3>
+            <input type="text" id="question1" placeholder="Qual o nome do seu primeiro animal de estimação?" required>
+            <input type="text" id="question2" placeholder="Qual o nome da sua mãe?" required>
+            <input type="text" id="question3" placeholder="Qual a sua cor favorita?" required>
+
+            <button onclick="register()">Registrar</button>
+            <p>Já tem conta? <span class="link" onclick="showScreen('login')">Entrar</span></p>
+        </div>
+
+        <!-- Tela de Pergunta de Segurança Aleatória -->
+        <div id="securityQuestion" class="screen hidden">
+            <h2>Responda a Pergunta de Segurança</h2>
+            <div id="randomQuestion"></div>
+            <input type="text" id="answer" placeholder="Sua resposta" required>
+            <button onclick="validateSecurityAnswer()">Confirmar Resposta</button>
+        </div>
+
+        <!-- Tela de Informações de Saúde -->
+        <div id="healthInfo" class="screen hidden">
+            <h2>Informações de Saúde</h2>
+            <input type="number" id="age" placeholder="Idade">
+            <input type="text" id="bloodPressure" placeholder="Pressão Arterial (Ex: 120/80 mmHg)">
+            <input type="text" id="heartRate" placeholder="Batimentos Cardíacos (Ex: 72 bpm)">
+            <input type="text" id="weight" placeholder="Peso (Ex: 70 kg)">
+            <button onclick="saveHealthInfo()">Salvar Informações</button>
+            <button onclick="showHistory()">Ver Histórico</button>
+            <button onclick="logout()" style="background-color: #ddd; color: #333;">Logout</button>
+        </div>
+
+        <!-- Tela de Histórico de Informações -->
+        <div id="history" class="screen hidden">
+            <h2>Histórico de Saúde</h2>
+            <div id="historyList"></div>
+            <button onclick="showScreen('healthInfo')">Voltar</button>
+            <button onclick="logout()" style="background-color: #ddd; color: #333;">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        let users = [{ email: 'teste@saude.com', password: 'Senha123!', name: 'Usuário Teste', phone: '999999999', securityAnswers: ['Rex', 'Maria', 'Azul'], healthInfo: [] }];
+        let currentUser = null;
+
+        function showScreen(screen) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(screen).classList.remove('hidden');
+            clearFields(screen);
+        }
+
+        function clearFields(screen) {
+            if (screen === 'login') {
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+            } else if (screen === 'register') {
+                document.getElementById('registerName').value = '';
+                document.getElementById('registerEmail').value = '';
+                document.getElementById('registerPhone').value = '';
+                document.getElementById('registerPassword').value = '';
+                document.getElementById('question1').value = '';
+                document.getElementById('question2').value = '';
+                document.getElementById('question3').value = '';
+            } else if (screen === 'securityQuestion') {
+                document.getElementById('answer').value = '';
+            } else if (screen === 'healthInfo') {
+                document.getElementById('age').value = '';
+                document.getElementById('bloodPressure').value = '';
+                document.getElementById('heartRate').value = '';
+                document.getElementById('weight').value = '';
+            }
+        }
+
+        function validatePassword(password) {
+            const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            return regex.test(password);
+        }
+
+        function validateEmail(email) {
+            const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            return regex.test(email);
+        }
+
+        function register() {
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const phone = document.getElementById('registerPhone').value;
+            const password = document.getElementById('registerPassword').value;
+            const question1 = document.getElementById('question1').value;
+            const question2 = document.getElementById('question2').value;
+            const question3 = document.getElementById('question3').value;
+
+            if (!name || !email || !phone || !password || !question1 || !question2 || !question3) {
+                alert('Por favor, preencha todos os campos.');
+                return;
+            }
+
+            if (!validatePassword(password)) {
+                alert('Senha deve ter pelo menos 8 caracteres, incluir letras, números e caracteres especiais.');
+                return;
+            }
+
+            if (!validateEmail(email)) {
+                alert('E-mail inválido.');
+                return;
+            }
+
+            if (users.some(u => u.email === email)) {
+                alert('Este e-mail já está registrado.');
+                return;
+            }
+
+            users.push({ email, password, name, phone, securityAnswers: [question1, question2, question3], healthInfo: [] });
+            alert('Cadastro realizado com sucesso!');
+            showScreen('login');
+        }
+
+        function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const user = users.find(u => u.email === email && u.password === password);
+
+            if (user) {
+                currentUser = user;
+
+                if (currentUser.securityAnswers.length > 0) {
+                    showScreen('securityQuestion');
+                    showRandomSecurityQuestion();
+                } else {
+                    showScreen('healthInfo');
+                }
+            } else {
+                alert('E-mail ou senha incorretos. Tente novamente.');
+            }
+        }
+
+        function showRandomSecurityQuestion() {
+            const randomIndex = Math.floor(Math.random() * currentUser.securityAnswers.length);
+            const questions = [
+                'Qual o nome do seu primeiro animal de estimação?',
+                'Qual o nome da sua mãe?',
+                'Qual a sua cor favorita?'
+            ];
+            document.getElementById('randomQuestion').innerText = questions[randomIndex];
+        }
+
+        function validateSecurityAnswer() {
+            const answer = document.getElementById('answer').value;
+            const questions = [
+                'Qual o nome do seu primeiro animal de estimação?',
+                'Qual o nome da sua mãe?',
+                'Qual a sua cor favorita?'
+            ];
+            const randomIndex = questions.indexOf(document.getElementById('randomQuestion').innerText);
+            
+            if (answer === currentUser.securityAnswers[randomIndex]) {
+                alert('Resposta correta!');
+                showScreen('healthInfo');
+            } else {
+                alert('Resposta incorreta. Tente novamente.');
+            }
+        }
+
+        function saveHealthInfo() {
+            const age = document.getElementById('age').value;
+            const bloodPressure = document.getElementById('bloodPressure').value;
+            const heartRate = document.getElementById('heartRate').value;
+            const weight = document.getElementById('weight').value;
+
+            if (!age || !bloodPressure || !heartRate || !weight) {
+                alert('Por favor, preencha todos os campos.');
+                return;
+            }
+
+            currentUser.healthInfo.push({ age, bloodPressure, heartRate, weight });
+            alert('Informações de saúde salvas com sucesso!');
+            showScreen('healthInfo');
+        }
+
+        function showHistory() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = currentUser.healthInfo.length === 0 ? '<p>Nenhuma informação registrada ainda.</p>' : '';
+            currentUser.healthInfo.forEach((info, index) => {
+                const item = document.createElement('div');
+                item.innerHTML = `<p><strong>Informação #${index + 1}</strong><br>Idade: ${info.age}<br>Pressão Arterial: ${info.bloodPressure}<br>Batimentos Cardíacos: ${info.heartRate}<br>Peso: ${info.weight}</p>`;
+                historyList.appendChild(item);
+            });
+            showScreen('history');
+        }
+
+        function logout() {
+            currentUser = null;
+            alert('Você foi desconectado!');
+            showScreen('login');
+        }
+    </script>
+</body>
+</html>
